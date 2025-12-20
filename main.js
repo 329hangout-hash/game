@@ -20,6 +20,7 @@ groundImg.src = "ground.png";
 const GRAVITY = 0.6;
 const JUMP_POWER = 14;
 const SIDE_POWER = 6;
+const GROUND_LIMIT = canvas.height;
 
 /* ===== プレイヤー（ヤギ）===== */
 const player = {
@@ -151,7 +152,10 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   /* 地面 */
+  if (cameraY < GROUND_LIMIT) {
   ctx.drawImage(groundImg, ground.x, ground.y, ground.w, ground.h);
+}
+
 
   /* ヤギ */
   ctx.drawImage(goatImg, player.x, player.y, player.w, player.h);
