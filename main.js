@@ -1,7 +1,7 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-/* ===== 画面リサイズ ===== */
+/* ===== リサイズ ===== */
 function resize() {
   canvas.width = innerWidth;
   canvas.height = innerHeight;
@@ -22,10 +22,10 @@ const JUMP_POWER = 14;
 const SIDE_POWER = 6;
 const GROUND_LIMIT = canvas.height;
 
-/* ===== プレイヤー（ヤギ）===== */
+/* ===== プレイヤー ===== */
 const player = {
   x: canvas.width / 2 - 40,
-  y: canvas.height - 120,
+  y: canvas.height - 140,
   w: 80,
   h: 80,
   vx: 0,
@@ -44,16 +44,17 @@ const ground = {
 let platforms = [];
 for (let i = 0; i < 6; i++) {
   platforms.push({
-    x: Math.random() * (canvas.width - 80),
-    y: canvas.height - 150 - i * 120,
-    w: 80,
-    h: 15
+    x: Math.random() * (canvas.width - 100),
+    y: canvas.height - 200 - i * 120,
+    w: 100,
+    h: 16
   });
 }
 
 let cameraY = 0;
 let score = 0;
 let gameOver = false;
+let isOnGround = false;
 
 /* ===== タップ操作 ===== */
 let lastTapTime = 0;
@@ -63,6 +64,8 @@ canvas.addEventListener(
   "touchstart",
   e => {
     e.preventDefault();
+    if (gameOver) return;
+
     const touchX = e.touches[0].clientX;
     const now = Date.now();
     const isLeft = touchX < canvas.width / 2;
@@ -81,15 +84,21 @@ canvas.addEventListener(
 );
 
 function jump(type) {
+  if (!isOnGround) return;
+
   player.vy = -JUMP_POWER;
   if (type === "left") player.vx = -SIDE_POWER;
   if (type === "right") player.vx = SIDE_POWER;
   if (type === "up") player.vx = 0;
+
+  isOnGround = false;
 }
 
-/* ===== 更新処理 ===== */
+/* ===== 更新 ===== */
 function update() {
   if (gameOver) return;
+
+  isOnGround = false;
 
   player.vy += GRAVITY;
   player.x += player.vx;
@@ -101,16 +110,18 @@ function update() {
     player.x = canvas.width - player.w;
   }
 
-  /* 地面判定 */
+  /* 地面判定（最初だけ） */
   if (
+    cameraY < GROUND_LIMIT &&
     player.vy > 0 &&
     player.y + player.h > ground.y
   ) {
     player.y = ground.y - player.h;
     player.vy = 0;
+    isOnGround = true;
   }
 
-  /* 足場判定（上からのみ） */
+  /* 足場判定 */
   platforms.forEach(p => {
     if (
       player.vy > 0 &&
@@ -121,6 +132,7 @@ function update() {
     ) {
       player.y = p.y - player.h;
       player.vy = 0;
+      isOnGround = true;
     }
   });
 
@@ -135,10 +147,10 @@ function update() {
 
     while (platforms.length < 8) {
       platforms.push({
-        x: Math.random() * (canvas.width - 80),
+        x: Math.random() * (canvas.width - 100),
         y: -Math.random() * 120,
-        w: 80,
-        h: 15
+        w: 100,
+        h: 16
       });
     }
   }
@@ -153,16 +165,15 @@ function draw() {
 
   /* 地面 */
   if (cameraY < GROUND_LIMIT) {
-  ctx.drawImage(groundImg, ground.x, ground.y, ground.w, ground.h);
-}
-
-
-  /* ヤギ */
-  ctx.drawImage(goatImg, player.x, player.y, player.w, player.h);
+    ctx.drawImage(groundImg, ground.x, ground.y, ground.w, ground.h);
+  }
 
   /* 足場 */
   ctx.fillStyle = "#8b5a2b";
   platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
+
+  /* ヤギ */
+  ctx.drawImage(goatImg, player.x, player.y, player.w, player.h);
 
   /* スコア */
   ctx.fillStyle = "#000";
