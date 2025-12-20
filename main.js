@@ -1,18 +1,3 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no">
-<title>Goat Climb</title>
-<style>
-  body { margin:0; overflow:hidden; background:#87ceeb; }
-  canvas { display:block; }
-</style>
-</head>
-<body>
-<canvas id="game"></canvas>
-
-<script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -91,7 +76,9 @@ function update() {
 
   // 画面端
   if (player.x < 0) player.x = 0;
-  if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
+  if (player.x + player.w > canvas.width) {
+    player.x = canvas.width - player.w;
+  }
 
   // 足場当たり判定（上からのみ）
   platforms.forEach(p => {
@@ -116,7 +103,6 @@ function update() {
 
     platforms.forEach(p => p.y += diff);
 
-    // 新しい足場
     while (platforms.length < 10) {
       platforms.push({
         x: Math.random() * (canvas.width - 80),
@@ -127,7 +113,6 @@ function update() {
     }
   }
 
-  // 落下
   if (player.y > canvas.height) gameOver = true;
 }
 
@@ -149,7 +134,11 @@ function draw() {
 
   if (gameOver) {
     ctx.font = "30px sans-serif";
-    ctx.fillText("GAME OVER", canvas.width / 2 - 80, canvas.height / 2);
+    ctx.fillText(
+      "GAME OVER",
+      canvas.width / 2 - 80,
+      canvas.height / 2
+    );
   }
 }
 
@@ -159,7 +148,3 @@ function loop() {
   requestAnimationFrame(loop);
 }
 loop();
-</script>
-</body>
-</html>
-
