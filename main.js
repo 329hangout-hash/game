@@ -23,10 +23,10 @@ const SIDE_POWER = 6;
 
 /* ===== プレイヤー（ヤギ）===== */
 const player = {
-  x: canvas.width / 2 - 45,
+  x: canvas.width / 2 - 40,
   y: canvas.height - 120,
-  w: 90,
-  h: 90,
+  w: 80,
+  h: 80,
   vx: 0,
   vy: 0
 };
