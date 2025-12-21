@@ -17,82 +17,57 @@ const groundImg = new Image();
 groundImg.src = "ground.png";
 
 /* ===== 定数 ===== */
-const GRAVITY = 0.6;
-const JUMP_POWER = 14;
-const SIDE_POWER = 6;
-const GROUND_LIMIT = canvas.height;
+const GRAVITY = 0.7;
+const JUMP_POWER = 15;
+const SCROLL_SPEED = 4;
 
 /* ===== プレイヤー ===== */
 const player = {
-  x: canvas.width / 2 - 40,
+  x: canvas.width * 0.2,
   y: canvas.height - 140,
   w: 80,
   h: 80,
-  vx: 0,
   vy: 0
 };
 
 /* ===== 地面 ===== */
 const ground = {
-  x: 0,
   y: canvas.height - 60,
-  w: canvas.width,
   h: 60
 };
 
 /* ===== 足場 ===== */
 let platforms = [];
-for (let i = 0; i < 6; i++) {
+function spawnPlatform(x) {
   platforms.push({
-    x: Math.random() * (canvas.width - 100),
-    y: canvas.height - 200 - i * 120,
-    w: 100,
+    x: x,
+    y: canvas.height - 160 - Math.random() * 200,
+    w: 120,
     h: 16
   });
 }
 
-let cameraY = 0;
-let score = 0;
-let gameOver = false;
+// 初期足場
+for (let i = 0; i < 6; i++) {
+  spawnPlatform(400 + i * 250);
+}
+
 let isOnGround = false;
+let gameOver = false;
+let distance = 0;
 
-/* ===== タップ操作 ===== */
-let lastTapTime = 0;
-let tapTimer = null;
-
+/* ===== 操作 ===== */
 canvas.addEventListener(
   "touchstart",
   e => {
     e.preventDefault();
-    if (gameOver) return;
-
-    const touchX = e.touches[0].clientX;
-    const now = Date.now();
-    const isLeft = touchX < canvas.width / 2;
-
-    if (now - lastTapTime < 250) {
-      clearTimeout(tapTimer);
-      jump(isLeft ? "left" : "right");
-    } else {
-      tapTimer = setTimeout(() => {
-        jump("up");
-      }, 250);
+    if (isOnGround && !gameOver) {
+      player.vy = -JUMP_POWER;
+      isOnGround = false;
     }
-    lastTapTime = now;
   },
   { passive: false }
 );
-
-function jump(type) {
-  if (!isOnGround) return;
-
-  player.vy = -JUMP_POWER;
-  if (type === "left") player.vx = -SIDE_POWER;
-  if (type === "right") player.vx = SIDE_POWER;
-  if (type === "up") player.vx = 0;
-
-  isOnGround = false;
-}
 
 /* ===== 更新 ===== */
 function update() {
@@ -100,33 +75,23 @@ function update() {
 
   isOnGround = false;
 
+  // 重力
   player.vy += GRAVITY;
-  player.x += player.vx;
   player.y += player.vy;
 
-  /* 画面端 */
-  if (player.x < 0) player.x = 0;
-  if (player.x + player.w > canvas.width) {
-    player.x = canvas.width - player.w;
-  }
-
-  /* 地面判定（最初だけ） */
-  if (
-    cameraY < GROUND_LIMIT &&
-    player.vy > 0 &&
-    player.y + player.h > ground.y
-  ) {
+  /* 地面 */
+  if (player.y + player.h > ground.y) {
     player.y = ground.y - player.h;
     player.vy = 0;
     isOnGround = true;
   }
 
-  /* 足場判定 */
+  /* 足場 */
   platforms.forEach(p => {
     if (
       player.vy > 0 &&
-      player.x < p.x + p.w &&
       player.x + player.w > p.x &&
+      player.x < p.x + p.w &&
       player.y + player.h > p.y &&
       player.y + player.h < p.y + p.h + 10
     ) {
@@ -136,27 +101,20 @@ function update() {
     }
   });
 
-  /* スクロール */
-  if (player.y < canvas.height / 3) {
-    const diff = canvas.height / 3 - player.y;
-    player.y = canvas.height / 3;
-    cameraY += diff;
-    score += Math.floor(diff);
+  /* 横スクロール */
+  platforms.forEach(p => (p.x -= SCROLL_SPEED));
+  distance += SCROLL_SPEED;
 
-    platforms.forEach(p => (p.y += diff));
-
-    while (platforms.length < 8) {
-      platforms.push({
-        x: Math.random() * (canvas.width - 100),
-        y: -Math.random() * 120,
-        w: 100,
-        h: 16
-      });
-    }
+  /* 足場補充 */
+  if (platforms[0].x + platforms[0].w < 0) {
+    platforms.shift();
+    spawnPlatform(canvas.width + Math.random() * 200);
   }
 
-  /* 落下でゲームオーバー */
-  if (player.y > canvas.height) gameOver = true;
+  /* 落下 */
+  if (player.y > canvas.height) {
+    gameOver = true;
+  }
 }
 
 /* ===== 描画 ===== */
@@ -164,21 +122,27 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   /* 地面 */
-  if (cameraY < GROUND_LIMIT) {
-    ctx.drawImage(groundImg, ground.x, ground.y, ground.w, ground.h);
-  }
+  ctx.drawImage(
+    groundImg,
+    0,
+    ground.y,
+    canvas.width,
+    ground.h
+  );
 
   /* 足場 */
   ctx.fillStyle = "#8b5a2b";
-  platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
+  platforms.forEach(p =>
+    ctx.fillRect(p.x, p.y, p.w, p.h)
+  );
 
   /* ヤギ */
   ctx.drawImage(goatImg, player.x, player.y, player.w, player.h);
 
-  /* スコア */
+  /* 距離 */
   ctx.fillStyle = "#000";
   ctx.font = "16px sans-serif";
-  ctx.fillText("HEIGHT: " + score, 10, 20);
+  ctx.fillText("DISTANCE: " + Math.floor(distance / 10), 10, 20);
 
   if (gameOver) {
     ctx.font = "32px sans-serif";
