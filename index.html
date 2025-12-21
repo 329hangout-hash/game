@@ -1,18 +1,113 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta
-    name="viewport"
-    content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no"
-  >
-  <title>Goat Climb</title>
-
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ほのぼのヤギゲーム</title>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    background-color: #e0f7fa;
+    margin: 0;
+    padding: 0;
+  }
+  #game {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 50px auto;
+  }
+  #goat {
+    width: 200px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  #goat.jump {
+    transform: translateY(-20px);
+  }
+  #speech {
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    border: 2px solid #000;
+    border-radius: 10px;
+    padding: 10px;
+    display: none;
+    max-width: 180px;
+  }
+  #feedBtn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+  }
+</style>
 </head>
 <body>
-  <canvas id="game"></canvas>
 
-  <script src="main.js"></script>
+<div id="game">
+  <div id="speech"></div>
+  <img id="goat" src="https://upload.wikimedia.org/wikipedia/commons/3/32/Goat_illustration.png" alt="ヤギ">
+</div>
+<button id="feedBtn">餌をあげる</button>
+
+<audio id="bleat" src="https://freesound.org/data/previews/341/341695_6262123-lq.mp3"></audio>
+
+<script>
+const feedBtn = document.getElementById('feedBtn');
+const speech = document.getElementById('speech');
+const bleat = document.getElementById('bleat');
+const goat = document.getElementById('goat');
+
+// 最後に餌をあげた時間（タイムスタンプ）
+let lastFeedTime = localStorage.getItem('lastFeedTime') || 0;
+
+// 餌をあげる関数
+function feedGoat() {
+  const now = Date.now();
+  const oneHour = 60 * 60 * 1000; // 1時間
+
+  if (now - lastFeedTime < oneHour) {
+    const remaining = Math.ceil((oneHour - (now - lastFeedTime)) / 60000);
+    showSpeech(`もう少しで次にあげられるよ！（あと${remaining}分）`);
+    return;
+  }
+
+  lastFeedTime = now;
+  localStorage.setItem('lastFeedTime', lastFeedTime);
+
+  // 喜びメッセージ
+  const messages = [
+    "メェ〜！楽しい時間だよ！",
+    "わーい！ありがとう！",
+    "おいしい！運勢は…大吉！",
+    "嬉しいなぁ〜！"
+  ];
+  const msg = messages[Math.floor(Math.random() * messages.length)];
+  showSpeech(msg);
+
+  // 鳴き声
+  bleat.play();
+
+  // 簡単なジャンプアニメーション
+  goat.classList.add('jump');
+  setTimeout(() => goat.classList.remove('jump'), 300);
+}
+
+// 吹き出し表示関数（3秒で自動で消える）
+function showSpeech(text) {
+  speech.textContent = text;
+  speech.style.display = "block";
+  setTimeout(() => {
+    speech.style.display = "none";
+  }, 3000);
+}
+
+feedBtn.addEventListener('click', feedGoat);
+</script>
+
 </body>
 </html>
