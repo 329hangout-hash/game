@@ -1,9 +1,46 @@
 body {
   margin: 0;
-  overflow: hidden;
-  background: #87ceeb;
+  background: #eef6f0;
+  font-family: system-ui, sans-serif;
 }
 
-canvas {
-  display: block;
+#game {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ヤギ */
+#goat {
+  position: absolute;
+  left: 20px;
+  bottom: 40px;
+  width: 120px;
+  user-select: none;
+}
+
+/* 餌 */
+#food {
+  position: absolute;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  width: 60px;
+  cursor: pointer;
+}
+
+/* 吹き出し */
+#talk {
+  position: absolute;
+  bottom: 180px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  display: none;
+  max-width: 80%;
+  text-align: center;
 }

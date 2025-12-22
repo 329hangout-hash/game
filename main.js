@@ -1,163 +1,123 @@
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-/* ===== リサイズ ===== */
-function resize() {
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-}
-resize();
-addEventListener("resize", resize);
-
-/* ===== 画像 ===== */
-const goatImg = new Image();
-goatImg.src = "goat.png";
-
-const groundImg = new Image();
-groundImg.src = "ground.png";
-
-/* ===== 定数 ===== */
-const GRAVITY = 0.7;
-const JUMP_POWER = 15;
-const SCROLL_SPEED = 4;
-
-/* ===== プレイヤー ===== */
-const player = {
-  x: canvas.width * 0.2,
-  y: canvas.height - 140,
-  w: 80,
-  h: 80,
-  vy: 0
+/* ===== 状態 ===== */
+const State = {
+  IDLE: 'idle',
+  APPROACH: 'approach',
+  WAIT_FOOD: 'wait_food',
+  EAT: 'eat',
+  HAPPY: 'happy',
+  TALK: 'talk'
 };
 
-/* ===== 地面 ===== */
-const ground = {
-  y: canvas.height - 60,
-  h: 60
-};
+let state = State.IDLE;
 
-/* ===== 足場 ===== */
-let platforms = [];
-function spawnPlatform(x) {
-  platforms.push({
-    x: x,
-    y: canvas.height - 160 - Math.random() * 200,
-    w: 120,
-    h: 16
-  });
+/* ===== 要素 ===== */
+const goat = document.getElementById('goat');
+const food = document.getElementById('food');
+const talk = document.getElementById('talk');
+
+/* ===== 初期値 ===== */
+let goatX = 20;
+let targetX;
+
+/* ===== メッセージ ===== */
+const messages = [
+  '今日はいい流れだよ',
+  'その選択、合ってる',
+  '無理しなくて大丈夫',
+  'ちゃんと前に進んでる'
+];
+
+/* ===== 状態変更 ===== */
+function setState(next) {
+  state = next;
+
+  switch (state) {
+    case State.IDLE:
+      goat.src = 'assets/goat_idle.png';
+      talk.style.display = 'none';
+      break;
+
+    case State.APPROACH:
+      goat.src = 'assets/goat_approach.png';
+      approachGoat();
+      break;
+
+    case State.WAIT_FOOD:
+      // 何もしない（餌タップ待ち）
+      break;
+
+    case State.EAT:
+      startEatAnimation();
+      break;
+
+    case State.HAPPY:
+      goat.src = 'assets/goat_happy.png';
+      setTimeout(() => setState(State.TALK), 1000);
+      break;
+
+    case State.TALK:
+      showTalk();
+      break;
+  }
 }
 
-// 初期足場
-for (let i = 0; i < 6; i++) {
-  spawnPlatform(400 + i * 250);
-}
+/* ===== 寄ってくる ===== */
+function approachGoat() {
+  targetX = food.offsetLeft - 40;
 
-let isOnGround = false;
-let gameOver = false;
-let distance = 0;
+  function move() {
+    goatX += (targetX - goatX) * 0.08;
+    goat.style.left = goatX + 'px';
 
-/* ===== 操作 ===== */
-canvas.addEventListener(
-  "touchstart",
-  e => {
-    e.preventDefault();
-    if (isOnGround && !gameOver) {
-      player.vy = -JUMP_POWER;
-      isOnGround = false;
+    // ちょい揺れ
+    goat.style.transform =
+      `translateY(${Math.sin(goatX * 0.1) * 2}px)`;
+
+    if (Math.abs(targetX - goatX) > 1) {
+      requestAnimationFrame(move);
+    } else {
+      setState(State.WAIT_FOOD);
     }
-  },
-  { passive: false }
-);
-
-/* ===== 更新 ===== */
-function update() {
-  if (gameOver) return;
-
-  isOnGround = false;
-
-  // 重力
-  player.vy += GRAVITY;
-  player.y += player.vy;
-
-  /* 地面 */
-  if (player.y + player.h > ground.y) {
-    player.y = ground.y - player.h;
-    player.vy = 0;
-    isOnGround = true;
   }
 
-  /* 足場 */
-  platforms.forEach(p => {
-    if (
-      player.vy > 0 &&
-      player.x + player.w > p.x &&
-      player.x < p.x + p.w &&
-      player.y + player.h > p.y &&
-      player.y + player.h < p.y + p.h + 10
-    ) {
-      player.y = p.y - player.h;
-      player.vy = 0;
-      isOnGround = true;
-    }
-  });
-
-  /* 横スクロール */
-  platforms.forEach(p => (p.x -= SCROLL_SPEED));
-  distance += SCROLL_SPEED;
-
-  /* 足場補充 */
-  if (platforms[0].x + platforms[0].w < 0) {
-    platforms.shift();
-    spawnPlatform(canvas.width + Math.random() * 200);
-  }
-
-  /* 落下 */
-  if (player.y > canvas.height) {
-    gameOver = true;
-  }
+  move();
 }
 
-/* ===== 描画 ===== */
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+/* ===== 食べる ===== */
+const eatFrames = [
+  'assets/goat_eat_1.png',
+  'assets/goat_eat_2.png'
+];
+let eatIndex = 0;
+let eatTimer;
 
-  /* 地面 */
-  ctx.drawImage(
-    groundImg,
-    0,
-    ground.y,
-    canvas.width,
-    ground.h
-  );
+function startEatAnimation() {
+  eatTimer = setInterval(() => {
+    goat.src = eatFrames[eatIndex];
+    eatIndex = (eatIndex + 1) % eatFrames.length;
+  }, 300);
 
-  /* 足場 */
-  ctx.fillStyle = "#8b5a2b";
-  platforms.forEach(p =>
-    ctx.fillRect(p.x, p.y, p.w, p.h)
-  );
+  setTimeout(() => {
+    clearInterval(eatTimer);
+    setState(State.HAPPY);
+  }, 3000);
+}
 
-  /* ヤギ */
-  ctx.drawImage(goatImg, player.x, player.y, player.w, player.h);
+/* ===== 喋る ===== */
+function showTalk() {
+  talk.textContent =
+    messages[Math.floor(Math.random() * messages.length)];
+  talk.style.display = 'block';
+}
 
-  /* 距離 */
-  ctx.fillStyle = "#000";
-  ctx.font = "16px sans-serif";
-  ctx.fillText("DISTANCE: " + Math.floor(distance / 10), 10, 20);
-
-  if (gameOver) {
-    ctx.font = "32px sans-serif";
-    ctx.fillText(
-      "GAME OVER",
-      canvas.width / 2 - 90,
-      canvas.height / 2
-    );
+/* ===== イベント ===== */
+food.addEventListener('click', () => {
+  if (state === State.IDLE) {
+    setState(State.APPROACH);
+  } else if (state === State.WAIT_FOOD) {
+    setState(State.EAT);
   }
-}
+});
 
-/* ===== ループ ===== */
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-loop();
+/* ===== 開始 ===== */
+setState(State.IDLE);
