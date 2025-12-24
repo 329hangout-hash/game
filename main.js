@@ -17,8 +17,8 @@ const talk = document.getElementById('talk');
 
 /* ===== 初期値 ===== */
 let scale = 0.6;          // 遠い（小さい）
-const targetScale = 1.0; // 近い（通常サイズ）
-let baseY = 0;
+const targetScale = 1.0; // 近い（通常）
+let sway = 0;
 
 /* ===== メッセージ ===== */
 const messages = [
@@ -27,6 +27,12 @@ const messages = [
   '無理しなくて大丈夫',
   'ちゃんと前に進んでる'
 ];
+
+/* ===== transform共通適用 ===== */
+function applyTransform() {
+  goat.style.transform =
+    `translate(-50%, -50%) translateY(${sway}px) scale(${scale})`;
+}
 
 /* ===== 状態変更 ===== */
 function setState(next) {
@@ -37,6 +43,7 @@ function setState(next) {
       goat.src = 'assets/goat_idle.png';
       talk.style.display = 'none';
       scale = 0.6;
+      sway = 0;
       applyTransform();
       break;
 
@@ -68,28 +75,22 @@ function approachGoat() {
   function move() {
     scale += (targetScale - scale) * 0.08;
 
-    // 近づくにつれて揺れが少し大きくなる
-    const sway =
-      Math.sin(Date.now() * 0.006) * 4 * scale;
+    // 近づくほど少し揺れる
+    sway = Math.sin(Date.now() * 0.006) * 4 * scale;
 
-    goat.style.transform =
-      `translateY(${sway}px) scale(${scale})`;
+    applyTransform();
 
     if (Math.abs(targetScale - scale) > 0.01) {
       requestAnimationFrame(move);
     } else {
       scale = targetScale;
+      sway = 0;
       applyTransform();
       setState(State.WAIT_FOOD);
     }
   }
 
   move();
-}
-
-/* ===== transform共通適用 ===== */
-function applyTransform() {
-  goat.style.transform = `scale(${scale})`;
 }
 
 /* ===== 食べる ===== */
