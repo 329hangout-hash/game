@@ -26,11 +26,13 @@ body {
 /* ヤギ */
 #goat {
   position: absolute;
-  left: 20px;
+  left: 50%;
   bottom: 40px;
+  transform: translateX(-50%);
   width: 120px;
   user-select: none;
 }
+
 
 /* 餌 */
 #food {
