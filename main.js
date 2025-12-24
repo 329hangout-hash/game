@@ -20,6 +20,12 @@ let scale = 0.6;          // 遠い（小さい）
 const targetScale = 1.0; // 近い（通常）
 let sway = 0;
 
+/* ★ 位置（追加） */
+let posX = -80; // 左寄り（IDLE）
+let posY = -40; // 少し上（IDLE）
+const targetX = 0; // 中央
+const targetY = 0;
+
 /* ===== メッセージ ===== */
 const messages = [
   '今日はいい流れだよ',
@@ -31,7 +37,7 @@ const messages = [
 /* ===== transform共通適用 ===== */
 function applyTransform() {
   goat.style.transform =
-    `translate(-50%, -50%) translateY(${sway}px) scale(${scale})`;
+    `translate(-50%, -50%) translate(${posX}px, ${posY + sway}px) scale(${scale})`;
 }
 
 /* ===== 状態変更 ===== */
@@ -44,6 +50,8 @@ function setState(next) {
       talk.style.display = 'none';
       scale = 0.6;
       sway = 0;
+      posX = -80;
+      posY = -40;
       applyTransform();
       break;
 
@@ -52,11 +60,9 @@ function setState(next) {
       approachGoat();
       break;
 
-
     case State.WAIT_FOOD:
-  goat.src = 'assets/goat_approach.png';
-  break;
-
+      goat.src = 'assets/goat_approach.png';
+      break;
 
     case State.EAT:
       startEatAnimation();
@@ -73,20 +79,28 @@ function setState(next) {
   }
 }
 
-/* ===== 寄ってくる（向き固定・拡大のみ） ===== */
+/* ===== 寄ってくる（斜め移動＋拡大） ===== */
 function approachGoat() {
   function move() {
     scale += (targetScale - scale) * 0.08;
+    posX += (targetX - posX) * 0.08;
+    posY += (targetY - posY) * 0.08;
 
     // 近づくほど少し揺れる
     sway = Math.sin(Date.now() * 0.006) * 4 * scale;
 
     applyTransform();
 
-    if (Math.abs(targetScale - scale) > 0.01) {
+    if (
+      Math.abs(targetScale - scale) > 0.01 ||
+      Math.abs(targetX - posX) > 0.5 ||
+      Math.abs(targetY - posY) > 0.5
+    ) {
       requestAnimationFrame(move);
     } else {
       scale = targetScale;
+      posX = targetX;
+      posY = targetY;
       sway = 0;
       applyTransform();
       setState(State.WAIT_FOOD);
