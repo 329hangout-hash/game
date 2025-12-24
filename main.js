@@ -51,7 +51,7 @@ function applyTransform(extraY = 0) {
 /* ===== IDLE 寝息 ===== */
 function startIdleBreath() {
   function loop() {
-    idleBreath = Math.sin(Date.now() * 0.002) * 2; // 控えめ
+    idleBreath = Math.sin(Date.now() * 0.002) * 2;
     applyTransform(idleBreath);
     idleRAF = requestAnimationFrame(loop);
   }
@@ -82,7 +82,7 @@ function setState(next) {
 
     case State.APPROACH:
       stopIdleBreath();
-      goat.src = 'assets/goat_approach.png'; // ★ 起きてから移動
+      goat.src = 'assets/goat_approach.png';
       approachGoat();
       break;
 
@@ -154,7 +154,13 @@ function startEatAnimation() {
 
   setTimeout(() => {
     clearInterval(eatTimer);
-    setState(State.HAPPY);
+
+    // ★ 食べ終わりの顔
+    goat.src = 'assets/goat_eat_3.png';
+
+    setTimeout(() => {
+      setState(State.HAPPY);
+    }, 600); // 食後の余韻
   }, 3000);
 }
 
