@@ -48,12 +48,15 @@ function setState(next) {
       break;
 
     case State.APPROACH:
-      goat.src = 'assets/goat_idle.png';
+      goat.src = 'assets/goat_approach.png';
       approachGoat();
       break;
 
+
     case State.WAIT_FOOD:
-      break;
+  goat.src = 'assets/goat_approach.png';
+  break;
+
 
     case State.EAT:
       startEatAnimation();
