@@ -16,15 +16,21 @@ const food = document.getElementById('food');
 const talk = document.getElementById('talk');
 
 /* ===== 初期値 ===== */
-let scale = 0.6;          // 遠い（小さい）
-const targetScale = 1.0; // 近い（通常）
+const BASE_SCALE = 1.5;        // ★ 全体を1.5倍
+let scale = 0.6 * BASE_SCALE; // 遠い
+const targetScale = 1.0 * BASE_SCALE;
+
 let sway = 0;
 
-/* ★ 位置（追加） */
-let posX = -80; // 左寄り（IDLE）
-let posY = -40; // 少し上（IDLE）
-const targetX = 0; // 中央
+/* ★ 位置 */
+let posX = -80;
+let posY = -40;
+const targetX = 0;
 const targetY = 0;
+
+/* ★ IDLE用 */
+let idleBreath = 0;
+let idleRAF = null;
 
 /* ===== メッセージ ===== */
 const messages = [
@@ -35,9 +41,28 @@ const messages = [
 ];
 
 /* ===== transform共通適用 ===== */
-function applyTransform() {
+function applyTransform(extraY = 0) {
   goat.style.transform =
-    `translate(-50%, -50%) translate(${posX}px, ${posY + sway}px) scale(${scale})`;
+    `translate(-50%, -50%)
+     translate(${posX}px, ${posY + sway + extraY}px)
+     scale(${scale})`;
+}
+
+/* ===== IDLE 寝息 ===== */
+function startIdleBreath() {
+  function loop() {
+    idleBreath = Math.sin(Date.now() * 0.002) * 4;
+    applyTransform(idleBreath);
+    idleRAF = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function stopIdleBreath() {
+  if (idleRAF) {
+    cancelAnimationFrame(idleRAF);
+    idleRAF = null;
+  }
 }
 
 /* ===== 状態変更 ===== */
@@ -48,14 +73,15 @@ function setState(next) {
     case State.IDLE:
       goat.src = 'assets/goat_idle.png';
       talk.style.display = 'none';
-      scale = 0.6;
+      scale = 0.6 * BASE_SCALE;
       sway = 0;
       posX = -80;
       posY = -40;
-      applyTransform();
+      startIdleBreath();
       break;
 
     case State.APPROACH:
+      stopIdleBreath();
       goat.src = 'assets/goat_approach.png';
       approachGoat();
       break;
@@ -79,15 +105,14 @@ function setState(next) {
   }
 }
 
-/* ===== 寄ってくる（斜め移動＋拡大） ===== */
+/* ===== 寄ってくる（斜め＋ゆっくり） ===== */
 function approachGoat() {
   function move() {
-    scale += (targetScale - scale) * 0.08;
-    posX += (targetX - posX) * 0.08;
-    posY += (targetY - posY) * 0.08;
+    scale += (targetScale - scale) * 0.04; // ★ スピード調整
+    posX += (targetX - posX) * 0.04;
+    posY += (targetY - posY) * 0.04;
 
-    // 近づくほど少し揺れる
-    sway = Math.sin(Date.now() * 0.006) * 4 * scale;
+    sway = Math.sin(Date.now() * 0.006) * 4 * (scale / BASE_SCALE);
 
     applyTransform();
 
