@@ -1,30 +1,63 @@
 html, body {
   width: 100%;
   height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
   margin: 0;
+  background: #eef6f0;
+  font-family: system-ui, sans-serif;
 }
 
 #game {
   position: relative;
   width: 100vw;
   height: 100vh;
-  background: #eef6f0;
   overflow: hidden;
+
+  /* 背景固定 */
+  background-image: url("assets/background.png");
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
 }
 
+/* ヤギ */
 #goat {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 160px; /* ← スマホ基準 */
-  transform-origin: center center;
+
+  /* 中央基準（JSで scale / translateY を足す前提） */
+  transform: translate(-50%, -50%) scale(1);
+
+  width: 120px;
   user-select: none;
+  pointer-events: none; /* 誤タップ防止 */
 }
 
+/* 餌 */
 #food {
   position: absolute;
   left: 50%;
   bottom: 40px;
   transform: translateX(-50%);
-  width: 64px;
+  width: 60px;
+  cursor: pointer;
+}
+
+/* 吹き出し */
+#talk {
+  position: absolute;
+  bottom: 180px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  display: none;
+  max-width: 80%;
+  text-align: center;
 }
