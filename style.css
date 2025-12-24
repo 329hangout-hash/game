@@ -27,9 +27,9 @@ body {
 #goat {
   position: absolute;
   left: 50%;
-  bottom: 40px;
+  bottom: 100px;
   transform: translateX(-50%);
-  width: 120px;
+  width: 150px;
   user-select: none;
 }
 
