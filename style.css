@@ -27,11 +27,12 @@ body {
 #goat {
   position: absolute;
   left: 50%;
-  bottom: 100px;
-  transform: translateX(-50%);
-  width: 150px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
   user-select: none;
 }
+
 
 
 /* 餌 */
