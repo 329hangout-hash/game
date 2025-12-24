@@ -16,21 +16,25 @@ const food = document.getElementById('food');
 const talk = document.getElementById('talk');
 
 /* ===== 初期値 ===== */
-const BASE_SCALE = 1.5;        // 全体倍率
-let scale = 0.6 * BASE_SCALE; // 寝ている時（遠い）
+const BASE_SCALE = 1.5;
+let scale = 0.6 * BASE_SCALE;
 const targetScale = 1.0 * BASE_SCALE;
 
 let sway = 0;
 
 /* ===== 位置 ===== */
-let posX = -80;   // 左寄りスタート
+let posX = -80;
 let posY = -40;
 const targetX = 0;
 const targetY = 0;
 
 /* ===== IDLE用 ===== */
-let idleBreath = 0;
 let idleRAF = null;
+
+/* ===== ドラッグ ===== */
+let isDragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
 
 /* ===== メッセージ ===== */
 const messages = [
@@ -40,7 +44,7 @@ const messages = [
   'ちゃんと前に進んでる'
 ];
 
-/* ===== transform共通適用 ===== */
+/* ===== transform ===== */
 function applyTransform(extraY = 0) {
   goat.style.transform =
     `translate(-50%, -50%)
@@ -48,21 +52,19 @@ function applyTransform(extraY = 0) {
      scale(${scale})`;
 }
 
-/* ===== IDLE 寝息 ===== */
+/* ===== 寝息 ===== */
 function startIdleBreath() {
   function loop() {
-    idleBreath = Math.sin(Date.now() * 0.002) * 2;
-    applyTransform(idleBreath);
+    sway = Math.sin(Date.now() * 0.002) * 2;
+    applyTransform();
     idleRAF = requestAnimationFrame(loop);
   }
   loop();
 }
 
 function stopIdleBreath() {
-  if (idleRAF) {
-    cancelAnimationFrame(idleRAF);
-    idleRAF = null;
-  }
+  if (idleRAF) cancelAnimationFrame(idleRAF);
+  idleRAF = null;
 }
 
 /* ===== 状態変更 ===== */
@@ -105,17 +107,14 @@ function setState(next) {
   }
 }
 
-/* ===== 寄ってくる（起きた状態で斜め移動＋拡大） ===== */
+/* ===== 寄ってくる ===== */
 function approachGoat() {
   function move() {
-    scale += (targetScale - scale) * 0.04;
-    posX += (targetX - posX) * 0.04;
-    posY += (targetY - posY) * 0.04;
+    scale += (targetScale - scale) * 0.035;
+    posX += (targetX - posX) * 0.035;
+    posY += (targetY - posY) * 0.035;
 
-    sway =
-      Math.sin(Date.now() * 0.006) *
-      3 *
-      (scale / BASE_SCALE);
+    sway = Math.sin(Date.now() * 0.006) * 3 * (scale / BASE_SCALE);
 
     applyTransform();
 
@@ -134,7 +133,6 @@ function approachGoat() {
       setState(State.WAIT_FOOD);
     }
   }
-
   move();
 }
 
@@ -143,42 +141,71 @@ const eatFrames = [
   'assets/goat_eat_1.png',
   'assets/goat_eat_2.png'
 ];
-let eatIndex = 0;
-let eatTimer;
 
 function startEatAnimation() {
-  eatTimer = setInterval(() => {
-    goat.src = eatFrames[eatIndex];
-    eatIndex = (eatIndex + 1) % eatFrames.length;
+  let i = 0;
+  const timer = setInterval(() => {
+    goat.src = eatFrames[i];
+    i = (i + 1) % eatFrames.length;
   }, 300);
 
   setTimeout(() => {
-    clearInterval(eatTimer);
-
-    // ★ 食べ終わりの顔
+    clearInterval(timer);
     goat.src = 'assets/goat_eat_3.png';
-
-    setTimeout(() => {
-      setState(State.HAPPY);
-    }, 600); // 食後の余韻
+    setTimeout(() => setState(State.HAPPY), 600);
   }, 3000);
 }
 
 /* ===== 喋る ===== */
 function showTalk() {
-  talk.textContent =
-    messages[Math.floor(Math.random() * messages.length)];
+  talk.textContent = messages[Math.floor(Math.random() * messages.length)];
   talk.style.display = 'block';
 }
 
-/* ===== イベント ===== */
-food.addEventListener('click', () => {
+/* ===== 餌ドラッグ ===== */
+food.addEventListener('mousedown', (e) => {
   if (state === State.IDLE) {
     setState(State.APPROACH);
-  } else if (state === State.WAIT_FOOD) {
+    return;
+  }
+  if (state !== State.WAIT_FOOD) return;
+
+  isDragging = true;
+  const rect = food.getBoundingClientRect();
+  dragOffsetX = e.clientX - rect.left;
+  dragOffsetY = e.clientY - rect.top;
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  food.style.left = `${e.clientX - dragOffsetX}px`;
+  food.style.top  = `${e.clientY - dragOffsetY}px`;
+});
+
+document.addEventListener('mouseup', () => {
+  if (!isDragging) return;
+  isDragging = false;
+
+  if (isFoodDroppedOnGoat()) {
+    resetFood();
     setState(State.EAT);
+  } else {
+    resetFood();
   }
 });
+
+/* ===== 判定 ===== */
+function isFoodDroppedOnGoat() {
+  const f = food.getBoundingClientRect();
+  const g = goat.getBoundingClientRect();
+
+  return !(f.right < g.left || f.left > g.right || f.bottom < g.top || f.top > g.bottom);
+}
+
+function resetFood() {
+  food.style.left = '';
+  food.style.top  = '';
+}
 
 /* ===== 開始 ===== */
 setState(State.IDLE);
