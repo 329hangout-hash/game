@@ -16,19 +16,19 @@ const food = document.getElementById('food');
 const talk = document.getElementById('talk');
 
 /* ===== 初期値 ===== */
-const BASE_SCALE = 1.5;        // ★ 全体を1.5倍
-let scale = 0.6 * BASE_SCALE; // 遠い
+const BASE_SCALE = 1.5;        // 全体倍率
+let scale = 0.6 * BASE_SCALE; // 寝ている時（遠い）
 const targetScale = 1.0 * BASE_SCALE;
 
 let sway = 0;
 
-/* ★ 位置 */
-let posX = -80;
+/* ===== 位置 ===== */
+let posX = -80;   // 左寄りスタート
 let posY = -40;
 const targetX = 0;
 const targetY = 0;
 
-/* ★ IDLE用 */
+/* ===== IDLE用 ===== */
 let idleBreath = 0;
 let idleRAF = null;
 
@@ -51,7 +51,7 @@ function applyTransform(extraY = 0) {
 /* ===== IDLE 寝息 ===== */
 function startIdleBreath() {
   function loop() {
-    idleBreath = Math.sin(Date.now() * 0.002) * 4;
+    idleBreath = Math.sin(Date.now() * 0.002) * 2; // 控えめ
     applyTransform(idleBreath);
     idleRAF = requestAnimationFrame(loop);
   }
@@ -74,15 +74,15 @@ function setState(next) {
       goat.src = 'assets/goat_idle.png';
       talk.style.display = 'none';
       scale = 0.6 * BASE_SCALE;
-      sway = 0;
       posX = -80;
       posY = -40;
+      sway = 0;
       startIdleBreath();
       break;
 
     case State.APPROACH:
       stopIdleBreath();
-      goat.src = 'assets/goat_approach.png';
+      goat.src = 'assets/goat_approach.png'; // ★ 起きてから移動
       approachGoat();
       break;
 
@@ -105,14 +105,17 @@ function setState(next) {
   }
 }
 
-/* ===== 寄ってくる（斜め＋ゆっくり） ===== */
+/* ===== 寄ってくる（起きた状態で斜め移動＋拡大） ===== */
 function approachGoat() {
   function move() {
-    scale += (targetScale - scale) * 0.04; // ★ スピード調整
+    scale += (targetScale - scale) * 0.04;
     posX += (targetX - posX) * 0.04;
     posY += (targetY - posY) * 0.04;
 
-    sway = Math.sin(Date.now() * 0.006) * 4 * (scale / BASE_SCALE);
+    sway =
+      Math.sin(Date.now() * 0.006) *
+      3 *
+      (scale / BASE_SCALE);
 
     applyTransform();
 
