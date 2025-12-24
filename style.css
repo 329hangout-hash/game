@@ -28,12 +28,14 @@ body {
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%);
+
+  /* 中央基準（JSで scale / translateY を足す前提） */
+  transform: translate(-50%, -50%) scale(1);
+
   width: 120px;
   user-select: none;
+  pointer-events: none; /* 誤タップ防止 */
 }
-
-
 
 /* 餌 */
 #food {

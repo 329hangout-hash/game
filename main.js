@@ -16,8 +16,9 @@ const food = document.getElementById('food');
 const talk = document.getElementById('talk');
 
 /* ===== 初期値 ===== */
-let goatX = 20;
-let targetX;
+let scale = 0.6;          // 遠い（小さい）
+const targetScale = 1.0; // 近い（通常サイズ）
+let baseY = 0;
 
 /* ===== メッセージ ===== */
 const messages = [
@@ -35,15 +36,16 @@ function setState(next) {
     case State.IDLE:
       goat.src = 'assets/goat_idle.png';
       talk.style.display = 'none';
+      scale = 0.6;
+      applyTransform();
       break;
 
     case State.APPROACH:
-      goat.src = 'assets/goat_approach.png';
+      goat.src = 'assets/goat_idle.png';
       approachGoat();
       break;
 
     case State.WAIT_FOOD:
-      // 何もしない（餌タップ待ち）
       break;
 
     case State.EAT:
@@ -61,26 +63,33 @@ function setState(next) {
   }
 }
 
-/* ===== 寄ってくる ===== */
+/* ===== 寄ってくる（向き固定・拡大のみ） ===== */
 function approachGoat() {
-  targetX = food.offsetLeft - 40;
-
   function move() {
-    goatX += (targetX - goatX) * 0.08;
-    goat.style.left = goatX + 'px';
+    scale += (targetScale - scale) * 0.08;
 
-    // ちょい揺れ
+    // 近づくにつれて揺れが少し大きくなる
+    const sway =
+      Math.sin(Date.now() * 0.006) * 4 * scale;
+
     goat.style.transform =
-      `translateY(${Math.sin(goatX * 0.1) * 2}px)`;
+      `translateY(${sway}px) scale(${scale})`;
 
-    if (Math.abs(targetX - goatX) > 1) {
+    if (Math.abs(targetScale - scale) > 0.01) {
       requestAnimationFrame(move);
     } else {
+      scale = targetScale;
+      applyTransform();
       setState(State.WAIT_FOOD);
     }
   }
 
   move();
+}
+
+/* ===== transform共通適用 ===== */
+function applyTransform() {
+  goat.style.transform = `scale(${scale})`;
 }
 
 /* ===== 食べる ===== */
