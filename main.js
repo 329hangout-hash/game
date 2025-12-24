@@ -16,14 +16,14 @@ const food = document.getElementById('food');
 const talk = document.getElementById('talk');
 
 /* ===== 初期値 ===== */
-const BASE_SCALE = 1.5;        // 全体倍率
-let scale = 0.6 * BASE_SCALE; // 寝ている時（遠い）
+const BASE_SCALE = 1.5;
+let scale = 0.6 * BASE_SCALE;
 const targetScale = 1.0 * BASE_SCALE;
 
 let sway = 0;
 
 /* ===== 位置 ===== */
-let posX = -80;   // 左寄りスタート
+let posX = -80;
 let posY = -40;
 const targetX = 0;
 const targetY = 0;
@@ -40,7 +40,7 @@ const messages = [
   'ちゃんと前に進んでる'
 ];
 
-/* ===== transform共通適用 ===== */
+/* ===== transform共通 ===== */
 function applyTransform(extraY = 0) {
   goat.style.transform =
     `translate(-50%, -50%)
@@ -73,10 +73,20 @@ function setState(next) {
     case State.IDLE:
       goat.src = 'assets/goat_idle.png';
       talk.style.display = 'none';
+
       scale = 0.6 * BASE_SCALE;
       posX = -80;
       posY = -40;
       sway = 0;
+
+      // ★ 餌を復活
+      food.style.display = 'block';
+      food.style.pointerEvents = 'auto';
+      food.style.left = '50%';
+      food.style.bottom = '40px';
+      food.style.top = 'auto';
+      food.style.transform = 'translateX(-50%)';
+
       startIdleBreath();
       break;
 
@@ -105,7 +115,7 @@ function setState(next) {
   }
 }
 
-/* ===== 寄ってくる（起きた状態で斜め移動＋拡大） ===== */
+/* ===== 寄ってくる ===== */
 function approachGoat() {
   function move() {
     scale += (targetScale - scale) * 0.04;
@@ -147,6 +157,8 @@ let eatIndex = 0;
 let eatTimer;
 
 function startEatAnimation() {
+  eatIndex = 0;
+
   eatTimer = setInterval(() => {
     goat.src = eatFrames[eatIndex];
     eatIndex = (eatIndex + 1) % eatFrames.length;
@@ -154,13 +166,11 @@ function startEatAnimation() {
 
   setTimeout(() => {
     clearInterval(eatTimer);
-
-    // ★ 食べ終わりの顔
     goat.src = 'assets/goat_eat_3.png';
 
     setTimeout(() => {
       setState(State.HAPPY);
-    }, 600); // 食後の余韻
+    }, 600);
   }, 3000);
 }
 
@@ -169,14 +179,85 @@ function showTalk() {
   talk.textContent =
     messages[Math.floor(Math.random() * messages.length)];
   talk.style.display = 'block';
+
+  // ★ 喋り終わったら自動でIDLEへ
+  setTimeout(() => {
+    setState(State.IDLE);
+  }, 2500);
 }
 
-/* ===== イベント ===== */
+/* ===== ドラッグ処理 ===== */
+let isDragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+food.addEventListener('mousedown', startDrag);
+food.addEventListener('touchstart', startDrag);
+
+function startDrag(e) {
+  if (state !== State.WAIT_FOOD || isDragging) return;
+
+  isDragging = true;
+
+  const rect = food.getBoundingClientRect();
+  const point = e.touches ? e.touches[0] : e;
+
+  dragOffsetX = point.clientX - rect.left;
+  dragOffsetY = point.clientY - rect.top;
+
+  food.style.cursor = 'grabbing';
+}
+
+window.addEventListener('mousemove', onDrag);
+window.addEventListener('touchmove', onDrag, { passive: false });
+
+function onDrag(e) {
+  if (!isDragging) return;
+
+  if (e.touches) e.preventDefault();
+
+  const point = e.touches ? e.touches[0] : e;
+
+  food.style.left = `${point.clientX - dragOffsetX}px`;
+  food.style.top = `${point.clientY - dragOffsetY}px`;
+  food.style.bottom = 'auto';
+  food.style.transform = 'none';
+}
+
+window.addEventListener('mouseup', endDrag);
+window.addEventListener('touchend', endDrag);
+
+function endDrag() {
+  if (!isDragging) return;
+  isDragging = false;
+
+  food.style.cursor = 'pointer';
+
+  const foodRect = food.getBoundingClientRect();
+  const goatRect = goat.getBoundingClientRect();
+
+  const isNearGoat =
+    foodRect.left < goatRect.right &&
+    foodRect.right > goatRect.left &&
+    foodRect.top < goatRect.bottom &&
+    foodRect.bottom > goatRect.top;
+
+  if (isNearGoat && state === State.WAIT_FOOD) {
+    food.style.display = 'none';
+    food.style.pointerEvents = 'none'; // ★ 二重発火防止
+    setState(State.EAT);
+  } else {
+    food.style.left = '50%';
+    food.style.bottom = '40px';
+    food.style.top = 'auto';
+    food.style.transform = 'translateX(-50%)';
+  }
+}
+
+/* ===== クリック（起こす用） ===== */
 food.addEventListener('click', () => {
   if (state === State.IDLE) {
     setState(State.APPROACH);
-  } else if (state === State.WAIT_FOOD) {
-    setState(State.EAT);
   }
 });
 
