@@ -1,13 +1,7 @@
 html, body {
   width: 100%;
   height: 100%;
-  overscroll-behavior: none;
-}
-
-body {
   margin: 0;
-  background: #eef6f0;
-  font-family: system-ui, sans-serif;
 }
 
 #game {
@@ -16,11 +10,22 @@ body {
   height: 100vh;
   overflow: hidden;
 
-  /* 背景固定 */
   background-image: url("assets/background.png");
   background-size: cover;
   background-position: center bottom;
-  background-repeat: no-repeat;
+}
+
+/* 柵 */
+#gate {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 400px;
+  z-index: 5;
+  transition: opacity 0.5s;
+  cursor: pointer;
 }
 
 /* ヤギ */
@@ -28,13 +33,9 @@ body {
   position: absolute;
   left: 50%;
   top: 50%;
-
-  /* 中央基準（JSで scale / translateY を足す前提） */
-  transform: translate(-50%, -50%) scale(1);
-
   width: 120px;
-  user-select: none;
-  pointer-events: none; /* 誤タップ防止 */
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
 /* 餌 */
@@ -58,6 +59,4 @@ body {
   border-radius: 12px;
   font-size: 14px;
   display: none;
-  max-width: 80%;
-  text-align: center;
 }

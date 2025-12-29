@@ -1,5 +1,6 @@
 /* ===== 状態 ===== */
 const State = {
+  GATE: 'gate',
   IDLE: 'idle',
   APPROACH: 'approach',
   WAIT_FOOD: 'wait_food',
@@ -8,12 +9,13 @@ const State = {
   TALK: 'talk'
 };
 
-let state = State.IDLE;
+let state = State.GATE;
 
 /* ===== 要素 ===== */
 const goat = document.getElementById('goat');
 const food = document.getElementById('food');
 const talk = document.getElementById('talk');
+const gate = document.getElementById('gate');
 
 /* ===== 初期値 ===== */
 const BASE_SCALE = 1.5;
@@ -70,7 +72,18 @@ function setState(next) {
   state = next;
 
   switch (state) {
+    case State.GATE:
+      gate.style.display = 'block';
+      gate.style.opacity = '1';
+      gate.src = 'assets/gate_closed.png';
+
+      food.style.display = 'none';
+      startIdleBreath();
+      break;
+
     case State.IDLE:
+      gate.style.display = 'none';
+
       goat.src = 'assets/goat_idle.png';
       talk.style.display = 'none';
 
@@ -79,7 +92,6 @@ function setState(next) {
       posY = -40;
       sway = 0;
 
-      // ★ 餌を復活
       food.style.display = 'block';
       food.style.pointerEvents = 'auto';
       food.style.left = '50%';
@@ -115,6 +127,21 @@ function setState(next) {
   }
 }
 
+/* ===== 柵タップ ===== */
+gate.addEventListener('click', () => {
+  if (state !== State.GATE) return;
+
+  gate.src = 'assets/gate_open.png';
+
+  setTimeout(() => {
+    gate.style.opacity = '0';
+
+    setTimeout(() => {
+      setState(State.APPROACH);
+    }, 500);
+  }, 300);
+});
+
 /* ===== 寄ってくる ===== */
 function approachGoat() {
   function move() {
@@ -122,11 +149,7 @@ function approachGoat() {
     posX += (targetX - posX) * 0.04;
     posY += (targetY - posY) * 0.04;
 
-    sway =
-      Math.sin(Date.now() * 0.006) *
-      3 *
-      (scale / BASE_SCALE);
-
+    sway = Math.sin(Date.now() * 0.006) * 3 * (scale / BASE_SCALE);
     applyTransform();
 
     if (
@@ -144,7 +167,6 @@ function approachGoat() {
       setState(State.WAIT_FOOD);
     }
   }
-
   move();
 }
 
@@ -180,86 +202,10 @@ function showTalk() {
     messages[Math.floor(Math.random() * messages.length)];
   talk.style.display = 'block';
 
-  // ★ 喋り終わったら自動でIDLEへ
   setTimeout(() => {
-    setState(State.IDLE);
+    setState(State.GATE);
   }, 2500);
 }
 
-/* ===== ドラッグ処理 ===== */
-let isDragging = false;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
-
-food.addEventListener('mousedown', startDrag);
-food.addEventListener('touchstart', startDrag);
-
-function startDrag(e) {
-  if (state !== State.WAIT_FOOD || isDragging) return;
-
-  isDragging = true;
-
-  const rect = food.getBoundingClientRect();
-  const point = e.touches ? e.touches[0] : e;
-
-  dragOffsetX = point.clientX - rect.left;
-  dragOffsetY = point.clientY - rect.top;
-
-  food.style.cursor = 'grabbing';
-}
-
-window.addEventListener('mousemove', onDrag);
-window.addEventListener('touchmove', onDrag, { passive: false });
-
-function onDrag(e) {
-  if (!isDragging) return;
-
-  if (e.touches) e.preventDefault();
-
-  const point = e.touches ? e.touches[0] : e;
-
-  food.style.left = `${point.clientX - dragOffsetX}px`;
-  food.style.top = `${point.clientY - dragOffsetY}px`;
-  food.style.bottom = 'auto';
-  food.style.transform = 'none';
-}
-
-window.addEventListener('mouseup', endDrag);
-window.addEventListener('touchend', endDrag);
-
-function endDrag() {
-  if (!isDragging) return;
-  isDragging = false;
-
-  food.style.cursor = 'pointer';
-
-  const foodRect = food.getBoundingClientRect();
-  const goatRect = goat.getBoundingClientRect();
-
-  const isNearGoat =
-    foodRect.left < goatRect.right &&
-    foodRect.right > goatRect.left &&
-    foodRect.top < goatRect.bottom &&
-    foodRect.bottom > goatRect.top;
-
-  if (isNearGoat && state === State.WAIT_FOOD) {
-    food.style.display = 'none';
-    food.style.pointerEvents = 'none'; // ★ 二重発火防止
-    setState(State.EAT);
-  } else {
-    food.style.left = '50%';
-    food.style.bottom = '40px';
-    food.style.top = 'auto';
-    food.style.transform = 'translateX(-50%)';
-  }
-}
-
-/* ===== クリック（起こす用） ===== */
-food.addEventListener('click', () => {
-  if (state === State.IDLE) {
-    setState(State.APPROACH);
-  }
-});
-
 /* ===== 開始 ===== */
-setState(State.IDLE);
+setState(State.GATE);
