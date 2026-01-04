@@ -82,7 +82,7 @@ function startSleepSequence() {
     let reaction = null;
     let duration = 900;
 
-    if (r < 0.50) {
+    if (r < 0.05) {
       reaction = 'assets/goat_yawn.png'; // レア 5%
       duration = 1400;
     } else if (r < 0.15) {
