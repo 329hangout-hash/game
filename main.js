@@ -36,16 +36,6 @@ let idleRAF = null;
 
 /* ===== 睡眠演出用 ===== */
 let sleepTimer = null;
-let sleepStage = 0;
-
-const sleepStages = [
-  'assets/goat_sleep.png', // 寝
-  'assets/goat_eye.png',   // 片目
-  'assets/goat_ear.png',   // 耳ピク
-  'assets/goat_yawn.png'   // あくび（レア）
-];
-
-const YAWN_RATE = 0.05; // 5%（かなり稀）
 
 /* ===== メッセージ ===== */
 const messages = [
@@ -80,7 +70,7 @@ function stopIdleBreath() {
   }
 }
 
-/* ===== 睡眠演出 ===== */
+/* ===== 睡眠演出（頻度調整済み） ===== */
 function startSleepSequence() {
   clearTimeout(sleepTimer);
   goat.src = 'assets/goat_sleep.png';
@@ -89,35 +79,35 @@ function startSleepSequence() {
     if (state !== State.GATE) return;
 
     const r = Math.random();
-
     let reaction = null;
+    let duration = 900;
 
-    if (r < 0.03) {
-      reaction = 'assets/goat_yawn.png';   // 超レア
-    } else if (r < 0.10) {
-      reaction = 'assets/goat_ear.png';    // たまに
-    } else if (r < 0.25) {
-      reaction = 'assets/goat_eye.png';    // わりと見る
+    if (r < 0.05) {
+      reaction = 'assets/goat_yawn.png'; // レア 5%
+      duration = 1400;
+    } else if (r < 0.15) {
+      reaction = 'assets/goat_eye.png';  // たまに 10%
+      duration = 1000;
+    } else if (r < 0.40) {
+      reaction = 'assets/goat_ear.png';  // 頻繁 25%
+      duration = 800;
     }
+    // それ以外（60%）は寝たまま
 
     if (reaction) {
       goat.src = reaction;
 
-      // 一瞬だけ見せてすぐ寝る
       sleepTimer = setTimeout(() => {
         goat.src = 'assets/goat_sleep.png';
         sleepTimer = setTimeout(tryReaction, 2500);
-      }, 1000);
-
+      }, duration);
     } else {
-      // 何も起きない時間
       sleepTimer = setTimeout(tryReaction, 2500);
     }
   }
 
   sleepTimer = setTimeout(tryReaction, 2000);
 }
-
 
 /* ===== 状態変更 ===== */
 function setState(next) {
