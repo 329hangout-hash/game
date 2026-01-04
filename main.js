@@ -34,6 +34,19 @@ const targetY = 0;
 let idleBreath = 0;
 let idleRAF = null;
 
+/* ===== 睡眠演出用 ===== */
+let sleepTimer = null;
+let sleepStage = 0;
+
+const sleepStages = [
+  'assets/goat_sleep.png', // 寝
+  'assets/goat_eye.png',   // 片目
+  'assets/goat_ear.png',   // 耳ピク
+  'assets/goat_yawn.png'   // あくび（レア）
+];
+
+const YAWN_RATE = 0.05; // 5%（かなり稀）
+
 /* ===== メッセージ ===== */
 const messages = [
   '今日はいい流れだよ',
@@ -67,6 +80,29 @@ function stopIdleBreath() {
   }
 }
 
+/* ===== 睡眠演出 ===== */
+function startSleepSequence() {
+  clearTimeout(sleepTimer);
+  sleepStage = 0;
+  goat.src = sleepStages[0];
+
+  function nextStage() {
+    if (state !== State.GATE) return;
+
+    sleepStage++;
+
+    // あくび判定
+    if (sleepStage === 3 && Math.random() > YAWN_RATE) return;
+
+    if (sleepStage < sleepStages.length) {
+      goat.src = sleepStages[sleepStage];
+      sleepTimer = setTimeout(nextStage, 1200);
+    }
+  }
+
+  sleepTimer = setTimeout(nextStage, 2000);
+}
+
 /* ===== 状態変更 ===== */
 function setState(next) {
   state = next;
@@ -78,12 +114,14 @@ function setState(next) {
       gate.src = 'assets/gate_closed.png';
 
       food.style.display = 'none';
+      goat.src = 'assets/goat_sleep.png';
+
       startIdleBreath();
+      startSleepSequence();
       break;
 
     case State.IDLE:
       gate.style.display = 'none';
-
       goat.src = 'assets/goat_idle.png';
       talk.style.display = 'none';
 
@@ -96,13 +134,13 @@ function setState(next) {
       food.style.pointerEvents = 'auto';
       food.style.left = '50%';
       food.style.bottom = '40px';
-      food.style.top = 'auto';
       food.style.transform = 'translateX(-50%)';
 
       startIdleBreath();
       break;
 
     case State.APPROACH:
+      clearTimeout(sleepTimer);
       stopIdleBreath();
       goat.src = 'assets/goat_approach.png';
       approachGoat();
@@ -135,14 +173,13 @@ gate.addEventListener('click', () => {
 
   setTimeout(() => {
     gate.style.opacity = '0';
-
     setTimeout(() => {
       setState(State.APPROACH);
     }, 500);
-  }, 300);
+  }, 800);
 });
 
-/* ===== 寄ってくる ===== */
+/* ===== 寄ってくる（既存） ===== */
 function approachGoat() {
   function move() {
     scale += (targetScale - scale) * 0.04;
@@ -170,7 +207,7 @@ function approachGoat() {
   move();
 }
 
-/* ===== 食べる ===== */
+/* ===== 食べる・喋る（既存そのまま） ===== */
 const eatFrames = [
   'assets/goat_eat_1.png',
   'assets/goat_eat_2.png'
@@ -196,7 +233,6 @@ function startEatAnimation() {
   }, 3000);
 }
 
-/* ===== 喋る ===== */
 function showTalk() {
   talk.textContent =
     messages[Math.floor(Math.random() * messages.length)];

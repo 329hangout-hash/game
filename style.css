@@ -24,7 +24,7 @@ html, body {
   width: 100%;
   max-width: 400px;
   z-index: 5;
-  transition: opacity 0.5s;
+  transition: opacity 1.2s;
   cursor: pointer;
 }
 
