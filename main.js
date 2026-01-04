@@ -107,7 +107,7 @@ function startSleepSequence() {
       sleepTimer = setTimeout(() => {
         goat.src = 'assets/goat_sleep.png';
         sleepTimer = setTimeout(tryReaction, 2500);
-      }, 600);
+      }, 1000);
 
     } else {
       // 何も起きない時間
