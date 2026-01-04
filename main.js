@@ -56,7 +56,7 @@ function applyTransform(extraY = 0) {
 /* ===== IDLE 寝息 ===== */
 function startIdleBreath() {
   function loop() {
-    idleBreath = Math.sin(Date.now() * 0.002) * 2;
+    idleBreath = Math.sin(Date.now() * 0.002) * 1;
     applyTransform(idleBreath);
     idleRAF = requestAnimationFrame(loop);
   }
