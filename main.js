@@ -83,25 +83,41 @@ function stopIdleBreath() {
 /* ===== 睡眠演出 ===== */
 function startSleepSequence() {
   clearTimeout(sleepTimer);
-  sleepStage = 0;
-  goat.src = sleepStages[0];
+  goat.src = 'assets/goat_sleep.png';
 
-  function nextStage() {
+  function tryReaction() {
     if (state !== State.GATE) return;
 
-    sleepStage++;
+    const r = Math.random();
 
-    // あくび判定
-    if (sleepStage === 3 && Math.random() > YAWN_RATE) return;
+    let reaction = null;
 
-    if (sleepStage < sleepStages.length) {
-      goat.src = sleepStages[sleepStage];
-      sleepTimer = setTimeout(nextStage, 1200);
+    if (r < 0.03) {
+      reaction = 'assets/goat_yawn.png';   // 超レア
+    } else if (r < 0.10) {
+      reaction = 'assets/goat_ear.png';    // たまに
+    } else if (r < 0.25) {
+      reaction = 'assets/goat_eye.png';    // わりと見る
+    }
+
+    if (reaction) {
+      goat.src = reaction;
+
+      // 一瞬だけ見せてすぐ寝る
+      sleepTimer = setTimeout(() => {
+        goat.src = 'assets/goat_sleep.png';
+        sleepTimer = setTimeout(tryReaction, 2500);
+      }, 600);
+
+    } else {
+      // 何も起きない時間
+      sleepTimer = setTimeout(tryReaction, 2500);
     }
   }
 
-  sleepTimer = setTimeout(nextStage, 2000);
+  sleepTimer = setTimeout(tryReaction, 2000);
 }
+
 
 /* ===== 状態変更 ===== */
 function setState(next) {
