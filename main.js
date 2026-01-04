@@ -70,7 +70,7 @@ function stopIdleBreath() {
   }
 }
 
-/* ===== 睡眠演出（頻度調整済み） ===== */
+/* ===== 睡眠演出 ===== */
 function startSleepSequence() {
   clearTimeout(sleepTimer);
   goat.src = 'assets/goat_sleep.png';
@@ -83,20 +83,18 @@ function startSleepSequence() {
     let duration = 900;
 
     if (r < 0.05) {
-      reaction = 'assets/goat_yawn.png'; // レア 5%
+      reaction = 'assets/goat_yawn.png';
       duration = 1400;
     } else if (r < 0.15) {
-      reaction = 'assets/goat_eye.png';  // たまに 10%
+      reaction = 'assets/goat_eye.png';
       duration = 1000;
     } else if (r < 0.40) {
-      reaction = 'assets/goat_ear.png';  // 頻繁 25%
+      reaction = 'assets/goat_ear.png';
       duration = 800;
     }
-    // それ以外（60%）は寝たまま
 
     if (reaction) {
       goat.src = reaction;
-
       sleepTimer = setTimeout(() => {
         goat.src = 'assets/goat_sleep.png';
         sleepTimer = setTimeout(tryReaction, 2500);
@@ -137,12 +135,12 @@ function setState(next) {
       sway = 0;
 
       food.style.display = 'block';
-      food.style.pointerEvents = 'auto';
       food.style.left = '50%';
-      food.style.bottom = '40px';
+      food.style.bottom = '60px';
       food.style.transform = 'translateX(-50%)';
 
       startIdleBreath();
+      enableFoodDrag();
       break;
 
     case State.APPROACH:
@@ -161,8 +159,8 @@ function setState(next) {
       break;
 
     case State.HAPPY:
-      goat.src = 'assets/goat_happy.png';
-      setTimeout(() => setState(State.TALK), 1000);
+      goat.src = 'assets/goat_eat_3.png';
+      setTimeout(() => setState(State.TALK), 800);
       break;
 
     case State.TALK:
@@ -185,7 +183,7 @@ gate.addEventListener('click', () => {
   }, 800);
 });
 
-/* ===== 寄ってくる（既存） ===== */
+/* ===== 寄ってくる ===== */
 function approachGoat() {
   function move() {
     scale += (targetScale - scale) * 0.04;
@@ -207,38 +205,73 @@ function approachGoat() {
       posY = targetY;
       sway = 0;
       applyTransform();
-      setState(State.WAIT_FOOD);
+      setState(State.IDLE);
     }
   }
   move();
 }
 
-/* ===== 食べる・喋る（既存そのまま） ===== */
+/* ===== スマホ対応ドラッグ ===== */
+let dragging = false;
+
+function enableFoodDrag() {
+  food.onpointerdown = e => {
+    if (state !== State.IDLE) return;
+    dragging = true;
+    food.setPointerCapture(e.pointerId);
+  };
+
+  window.onpointermove = e => {
+    if (!dragging) return;
+
+    food.style.left = e.clientX + 'px';
+    food.style.top = e.clientY + 'px';
+    food.style.bottom = 'auto';
+    food.style.transform = 'translate(-50%, -50%)';
+
+    if (isHit(food, goat)) {
+      dragging = false;
+      food.style.display = 'none';
+      setState(State.EAT);
+    }
+  };
+
+  window.onpointerup = () => dragging = false;
+}
+
+/* ===== 当たり判定（ゆるめ） ===== */
+function isHit(a, b) {
+  const r1 = a.getBoundingClientRect();
+  const r2 = b.getBoundingClientRect();
+  return !(
+    r1.right < r2.left ||
+    r1.left > r2.right ||
+    r1.bottom < r2.top ||
+    r1.top > r2.bottom
+  );
+}
+
+/* ===== もぐもぐ ===== */
 const eatFrames = [
   'assets/goat_eat_1.png',
   'assets/goat_eat_2.png'
 ];
-let eatIndex = 0;
-let eatTimer;
 
 function startEatAnimation() {
-  eatIndex = 0;
+  let count = 0;
 
-  eatTimer = setInterval(() => {
-    goat.src = eatFrames[eatIndex];
-    eatIndex = (eatIndex + 1) % eatFrames.length;
-  }, 300);
+  const timer = setInterval(() => {
+    goat.src = eatFrames[count % 2];
+    count++;
 
-  setTimeout(() => {
-    clearInterval(eatTimer);
-    goat.src = 'assets/goat_eat_3.png';
-
-    setTimeout(() => {
+    if (count >= 6) {
+      clearInterval(timer);
       setState(State.HAPPY);
-    }, 600);
-  }, 3000);
+    }
+  }, 300);
 }
 
+/* ===== 喋る ===== */
 function showTalk() {
   talk.textContent =
     messages[Math.floor(Math.random() * messages.length)];
