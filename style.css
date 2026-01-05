@@ -44,7 +44,7 @@ html, body {
   left: 50%;
   bottom: 40px;
   transform: translateX(-50%);
-  width: 120px;          /* ← 大きくする */
+  width: 150px;          /* ← 大きくする */
   max-width: 25vw;      /* ← スマホで大きくなりすぎない保険 */
   cursor: pointer;
   touch-action: none;   /* ← スマホドラッグ安定（重要） */
