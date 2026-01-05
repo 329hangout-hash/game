@@ -53,8 +53,9 @@ function applyTransform(extraY = 0) {
      scale(${scale})`;
 }
 
-/* ===== IDLE 寝息 ===== */
+/* ===== IDLE 呼吸 ===== */
 function startIdleBreath() {
+  stopIdleBreath();
   function loop() {
     idleBreath = Math.sin(Date.now() * 0.002) * 1;
     applyTransform(idleBreath);
@@ -70,41 +71,38 @@ function stopIdleBreath() {
   }
 }
 
-/* ===== 睡眠演出 ===== */
+/* ===== 睡眠演出（GATE専用） ===== */
 function startSleepSequence() {
   clearTimeout(sleepTimer);
   goat.src = 'assets/goat_sleep.png';
 
-  function tryReaction() {
+  function loop() {
     if (state !== State.GATE) return;
 
     const r = Math.random();
-    let reaction = null;
-    let duration = 900;
+    let img = null;
+    let dur = 800;
 
     if (r < 0.05) {
-      reaction = 'assets/goat_yawn.png';
-      duration = 1400;
+      img = 'assets/goat_yawn.png'; dur = 1400;
     } else if (r < 0.15) {
-      reaction = 'assets/goat_eye.png';
-      duration = 1000;
-    } else if (r < 0.40) {
-      reaction = 'assets/goat_ear.png';
-      duration = 800;
+      img = 'assets/goat_eye.png'; dur = 1000;
+    } else if (r < 0.4) {
+      img = 'assets/goat_ear.png'; dur = 800;
     }
 
-    if (reaction) {
-      goat.src = reaction;
+    if (img) {
+      goat.src = img;
       sleepTimer = setTimeout(() => {
-        goat.src = 'assets/goat_sleep.png';
-        sleepTimer = setTimeout(tryReaction, 2500);
-      }, duration);
+        if (state === State.GATE) goat.src = 'assets/goat_sleep.png';
+        sleepTimer = setTimeout(loop, 2500);
+      }, dur);
     } else {
-      sleepTimer = setTimeout(tryReaction, 2500);
+      sleepTimer = setTimeout(loop, 2500);
     }
   }
 
-  sleepTimer = setTimeout(tryReaction, 2000);
+  sleepTimer = setTimeout(loop, 2000);
 }
 
 /* ===== 状態変更 ===== */
@@ -112,19 +110,26 @@ function setState(next) {
   state = next;
 
   switch (state) {
+
     case State.GATE:
       gate.style.display = 'block';
       gate.style.opacity = '1';
       gate.src = 'assets/gate_closed.png';
 
       food.style.display = 'none';
-      goat.src = 'assets/goat_sleep.png';
-
-      startIdleBreath();
+      stopIdleBreath();
       startSleepSequence();
       break;
 
+    case State.APPROACH:
+      clearTimeout(sleepTimer);       // ★ 睡眠完全停止
+      stopIdleBreath();
+      goat.src = 'assets/goat_approach.png';
+      approachGoat();
+      break;
+
     case State.IDLE:
+      clearTimeout(sleepTimer);       // ★ 念押し
       gate.style.display = 'none';
       goat.src = 'assets/goat_idle.png';
       talk.style.display = 'none';
@@ -141,17 +146,6 @@ function setState(next) {
 
       startIdleBreath();
       enableFoodDrag();
-      break;
-
-    case State.APPROACH:
-      clearTimeout(sleepTimer);
-      stopIdleBreath();
-      goat.src = 'assets/goat_approach.png';
-      approachGoat();
-      break;
-
-    case State.WAIT_FOOD:
-      goat.src = 'assets/goat_approach.png';
       break;
 
     case State.EAT:
@@ -174,16 +168,13 @@ gate.addEventListener('click', () => {
   if (state !== State.GATE) return;
 
   gate.src = 'assets/gate_open.png';
-
   setTimeout(() => {
     gate.style.opacity = '0';
-    setTimeout(() => {
-      setState(State.APPROACH);
-    }, 500);
+    setTimeout(() => setState(State.APPROACH), 500);
   }, 800);
 });
 
-/* ===== 寄ってくる ===== */
+/* ===== 近づく ===== */
 function approachGoat() {
   function move() {
     scale += (targetScale - scale) * 0.04;
@@ -200,18 +191,13 @@ function approachGoat() {
     ) {
       requestAnimationFrame(move);
     } else {
-      scale = targetScale;
-      posX = targetX;
-      posY = targetY;
-      sway = 0;
-      applyTransform();
-      setState(State.IDLE);
+      setState(State.IDLE);   // ★ ここで寝ない
     }
   }
   move();
 }
 
-/* ===== スマホ対応ドラッグ ===== */
+/* ===== ドラッグ ===== */
 let dragging = false;
 
 function enableFoodDrag() {
@@ -239,7 +225,7 @@ function enableFoodDrag() {
   window.onpointerup = () => dragging = false;
 }
 
-/* ===== 当たり判定（ゆるめ） ===== */
+/* ===== 当たり判定 ===== */
 function isHit(a, b) {
   const r1 = a.getBoundingClientRect();
   const r2 = b.getBoundingClientRect();
@@ -258,28 +244,23 @@ const eatFrames = [
 ];
 
 function startEatAnimation() {
-  let count = 0;
-
-  const timer = setInterval(() => {
-    goat.src = eatFrames[count % 2];
-    count++;
-
-    if (count >= 6) {
-      clearInterval(timer);
+  let c = 0;
+  const t = setInterval(() => {
+    goat.src = eatFrames[c % 2];
+    if (++c >= 6) {
+      clearInterval(t);
       setState(State.HAPPY);
     }
   }, 300);
 }
 
-/* ===== 喋る ===== */
+/* ===== 会話 ===== */
 function showTalk() {
   talk.textContent =
     messages[Math.floor(Math.random() * messages.length)];
   talk.style.display = 'block';
 
-  setTimeout(() => {
-    setState(State.GATE);
-  }, 2500);
+  setTimeout(() => setState(State.GATE), 2500);
 }
 
 /* ===== 開始 ===== */
