@@ -147,7 +147,7 @@ function setState(next) {
       gate.style.display = 'none';
       talk.style.display = 'none';
 
-      goat.src = 'assets/goat_idle.png';
+      goat.src = 'assets/goat_approach.png';
 
       food.style.display = 'block';
       food.style.left = '50%';
