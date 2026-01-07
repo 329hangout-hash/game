@@ -267,24 +267,22 @@ function isHit(food, goat) {
   const f = food.getBoundingClientRect();
   const g = goat.getBoundingClientRect();
 
-  // ★ ヤギの当たり判定を内側に縮める
-  const shrinkX = g.width * 0.25;   // 横を25%削る
-  const shrinkY = g.height * 0.35;  // 縦を35%削る（口寄り）
+  // ★ ヤギの口の位置（見た目基準）
+  const mouthX = g.left + g.width * 0.55;
+  const mouthY = g.top + g.height * 0.45;
 
-  const goatHit = {
-    left: g.left + shrinkX,
-    right: g.right - shrinkX,
-    top: g.top + shrinkY,
-    bottom: g.bottom - shrinkY * 0.2
-  };
+  // ★ 餌の中心
+  const foodX = (f.left + f.right) / 2;
+  const foodY = (f.top + f.bottom) / 2;
 
-  return !(
-    f.right < goatHit.left ||
-    f.left > goatHit.right ||
-    f.bottom < goatHit.top ||
-    f.top > goatHit.bottom
-  );
+  const dx = foodX - mouthX;
+  const dy = foodY - mouthY;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  // ★ ここが感度調整ポイント（px）
+  return distance < 35;
 }
+
 
 
 /* ===== もぐもぐ＋餌減少 ===== */
