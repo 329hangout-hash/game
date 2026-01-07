@@ -263,16 +263,29 @@ function enableFoodDrag() {
 }
 
 /* ===== 当たり判定 ===== */
-function isHit(a, b) {
-  const r1 = a.getBoundingClientRect();
-  const r2 = b.getBoundingClientRect();
+function isHit(food, goat) {
+  const f = food.getBoundingClientRect();
+  const g = goat.getBoundingClientRect();
+
+  // ★ ヤギの当たり判定を内側に縮める
+  const shrinkX = g.width * 0.25;   // 横を25%削る
+  const shrinkY = g.height * 0.35;  // 縦を35%削る（口寄り）
+
+  const goatHit = {
+    left: g.left + shrinkX,
+    right: g.right - shrinkX,
+    top: g.top + shrinkY,
+    bottom: g.bottom - shrinkY * 0.2
+  };
+
   return !(
-    r1.right < r2.left ||
-    r1.left > r2.right ||
-    r1.bottom < r2.top ||
-    r1.top > r2.bottom
+    f.right < goatHit.left ||
+    f.left > goatHit.right ||
+    f.bottom < goatHit.top ||
+    f.top > goatHit.bottom
   );
 }
+
 
 /* ===== もぐもぐ＋餌減少 ===== */
 const eatFrames = [
