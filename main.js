@@ -267,14 +267,20 @@ function isHit(food, goat) {
   const f = food.getBoundingClientRect();
   const g = goat.getBoundingClientRect();
 
-  // ★ 口の“少し手前”を判定ポイントにする
-  const mouthX = g.left + g.width * 0.55;
-  const mouthY = g.top + g.height * 0.38; // ← 口より少し上（重要）
+  // ★ 調整用パラメータ
+  const MOUTH_X_RATE = 0.58;   // 右に行くほど数値UP
+  const MOUTH_Y_RATE = 0.45;   // 下に行くほど数値UP
+  const HIT_DISTANCE = 55;     // 判定半径（px）
 
-  // ★ 餌の中心
+  // ヤギの口の想定位置
+  const mouthX = g.left + g.width * MOUTH_X_RATE;
+  const mouthY = g.top + g.height * MOUTH_Y_RATE;
+
+  // 餌の中心
   const foodX = (f.left + f.right) / 2;
   const foodY = (f.top + f.bottom) / 2;
 
+  // 距離計算
   const dx = foodX - mouthX;
   const dy = foodY - mouthY;
   const distance = Math.sqrt(dx * dx + dy * dy);
