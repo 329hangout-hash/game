@@ -267,9 +267,9 @@ function isHit(food, goat) {
   const f = food.getBoundingClientRect();
   const g = goat.getBoundingClientRect();
 
-  // ★ ヤギの口の位置（見た目基準）
+  // ★ 口の“少し手前”を判定ポイントにする
   const mouthX = g.left + g.width * 0.55;
-  const mouthY = g.top + g.height * 0.45;
+  const mouthY = g.top + g.height * 0.38; // ← 口より少し上（重要）
 
   // ★ 餌の中心
   const foodX = (f.left + f.right) / 2;
@@ -279,9 +279,10 @@ function isHit(food, goat) {
   const dy = foodY - mouthY;
   const distance = Math.sqrt(dx * dx + dy * dy);
 
-  // ★ ここが感度調整ポイント（px）
-  return distance < 35;
+  // ★ 少し早めに反応させる
+  return distance < 55;
 }
+
 
 
 
