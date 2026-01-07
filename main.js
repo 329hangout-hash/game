@@ -3,7 +3,6 @@ const State = {
   GATE: 'gate',
   IDLE: 'idle',
   APPROACH: 'approach',
-  WAIT_FOOD: 'wait_food',
   EAT: 'eat',
   HAPPY: 'happy',
   TALK: 'talk'
@@ -39,7 +38,7 @@ const targetY = 0;
 let idleBreath = 0;
 let idleRAF = null;
 
-/* ===== 睡眠演出用 ===== */
+/* ===== 睡眠演出用（GATEのみ） ===== */
 let sleepTimer = null;
 
 /* ===== メッセージ ===== */
@@ -49,6 +48,15 @@ const messages = [
   '無理しなくて大丈夫',
   'ちゃんと前に進んでる'
 ];
+
+/* ===== 餌段階 ===== */
+const FOOD_STAGES = [
+  'assets/food_1.png',
+  'assets/food_2.png',
+  'assets/food_3.png'
+];
+
+let foodStage = 0;
 
 /* ===== transform共通 ===== */
 function applyTransform(extraY = 0) {
@@ -120,7 +128,7 @@ function setState(next) {
 
   switch (state) {
 
-    /* --- スタート・柵あり --- */
+    /* --- スタート（寝てる） --- */
     case State.GATE:
       gate.style.display = 'block';
       gate.style.opacity = '1';
@@ -129,7 +137,6 @@ function setState(next) {
       food.style.display = 'none';
       talk.style.display = 'none';
 
-      // ★ スタート位置を必ず左に戻す
       scale = START_SCALE;
       posX = START_X;
       posY = START_Y;
@@ -142,13 +149,15 @@ function setState(next) {
       startSleepSequence();
       break;
 
-    /* --- 近づいた後の待機（寝ない） --- */
+    /* --- 接近後の待機（寝ない） --- */
     case State.IDLE:
       gate.style.display = 'none';
       talk.style.display = 'none';
 
       goat.src = 'assets/goat_approach.png';
 
+      foodStage = 0;
+      food.src = FOOD_STAGES[0];
       food.style.display = 'block';
       food.style.left = '50%';
       food.style.bottom = '60px';
@@ -166,16 +175,18 @@ function setState(next) {
       approachGoat();
       break;
 
+    /* --- 食べる --- */
     case State.EAT:
       startEatAnimation();
       break;
 
+    /* --- 嬉しい --- */
     case State.HAPPY:
       goat.src = 'assets/goat_eat_3.png';
       setTimeout(() => setState(State.TALK), 800);
       break;
 
-    /* --- 占い（ここで止まる） --- */
+    /* --- 占い（終了） --- */
     case State.TALK:
       showTalk();
       break;
@@ -218,13 +229,13 @@ function approachGoat() {
       posY = targetY;
       sway = 0;
       applyTransform();
-      setState(State.IDLE); // ★ 寝ずに待機
+      setState(State.IDLE);
     }
   }
   move();
 }
 
-/* ===== スマホ対応ドラッグ ===== */
+/* ===== ドラッグ ===== */
 let dragging = false;
 
 function enableFoodDrag() {
@@ -244,7 +255,6 @@ function enableFoodDrag() {
 
     if (isHit(food, goat)) {
       dragging = false;
-      food.style.display = 'none';
       setState(State.EAT);
     }
   };
@@ -252,7 +262,7 @@ function enableFoodDrag() {
   window.onpointerup = () => dragging = false;
 }
 
-/* ===== 当たり判定（ゆるめ） ===== */
+/* ===== 当たり判定 ===== */
 function isHit(a, b) {
   const r1 = a.getBoundingClientRect();
   const r2 = b.getBoundingClientRect();
@@ -264,27 +274,42 @@ function isHit(a, b) {
   );
 }
 
-/* ===== もぐもぐ ===== */
+/* ===== もぐもぐ＋餌減少 ===== */
 const eatFrames = [
   'assets/goat_eat_1.png',
   'assets/goat_eat_2.png'
 ];
 
 function startEatAnimation() {
-  let count = 0;
+  stopIdleBreath();
+
+  let chewCount = 0;
 
   const timer = setInterval(() => {
-    goat.src = eatFrames[count % 2];
-    count++;
+    goat.src = eatFrames[chewCount % 2];
+    chewCount++;
 
-    if (count >= 6) {
+    if (chewCount % 4 === 0) {
+      reduceFood();
+    }
+
+    if (foodStage >= FOOD_STAGES.length) {
       clearInterval(timer);
+      food.style.display = 'none';
       setState(State.HAPPY);
     }
   }, 300);
 }
 
-/* ===== 喋る（終了後は何もしない） ===== */
+function reduceFood() {
+  foodStage++;
+
+  if (foodStage < FOOD_STAGES.length) {
+    food.src = FOOD_STAGES[foodStage];
+  }
+}
+
+/* ===== 占い ===== */
 function showTalk() {
   talk.textContent =
     messages[Math.floor(Math.random() * messages.length)];
